@@ -1,3 +1,5 @@
+#include "TimerOne.h"
+
 volatile int tone1 = 0;
 int freq = 0;
 volatile long frequency =0;
@@ -10,12 +12,15 @@ void setup() {
   pinMode(7,INPUT);
   pciSetup(7);
   Serial.println("In setup");
+
+  Timer1.initialize(25);
+  Timer1.attachInterrupt(timersetup);  // attaches callback() as a timer overflow interrupt
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
-  delay(2000);
-  Serial.println(tone1);
+  //delay(1);
+  //Serial.println(tone1);
 
 }
 
@@ -40,5 +45,10 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
           tone1 = 0;
         }
        prevInterruptTime=micros();
-       //Serial.println(frequency);
+       Serial.println(tone1);
 }
+void timersetup(){
+
+}
+
+

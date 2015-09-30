@@ -5,6 +5,10 @@ int freq = 0;
 volatile long frequency =0;
 long prevInterruptTime=0;
 long divider = 1000000;
+float sample=208.3;
+volatile int prevTone1 = 0;
+volatile int sampleState=1;
+volatile char buffer1,buffer2,buffer3,buffer4;
 
 void setup() {
   // put your setup code here, to run once:
@@ -13,7 +17,7 @@ void setup() {
   pciSetup(7);
   Serial.println("In setup");
 
-  Timer1.initialize(25);
+  Timer1.initialize(sample);
   Timer1.attachInterrupt(timersetup);  // attaches callback() as a timer overflow interrupt
 }
 
@@ -48,7 +52,50 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
        Serial.println(tone1);
 }
 void timersetup(){
-
+    switch(sampleState){
+      case 1:
+         if(prevTone1==tone1){
+            buffer1<<1;
+            buffer1 |= 1 << 0;
+         }else{
+            buffer1<<1;
+            buffer1 |= 1 << 1;
+         }
+         break;
+        case 2:
+         if(prevTone1==tone1){
+            buffer2<<1;
+            buffer2 |= 1 << 0;
+         }else{
+            buffer2<<1;
+            buffer2 |= 1 << 1;
+         }
+          break;
+         case 3:
+         if(prevTone1==tone1){
+            buffer3<<1;
+            buffer3 |= 1 << 0;
+         }else{
+            buffer3<<1;
+            buffer3 |= 1 << 1;
+         }
+          break;
+         case 4:
+         if(prevTone1==tone1){
+            buffer4<<1;
+            buffer4 |= 1 << 0;
+         }else{
+            buffer4<<1;
+            buffer4 |= 1 << 1;
+         }
+          break;
+    }
+    prevTone1=tone1;
+    sampleState++;
+    if(sampleState==5){
+      sampleState=1;
+    }
+    
 }
 
 

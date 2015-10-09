@@ -12,19 +12,22 @@ volatile int prevTone1 = 0,prevTone2 = 0,prevTone3 = 0,prevTone4 = 0,prevToneRea
 volatile int sampleState=1;
 volatile char buffer1,buffer2,buffer3,buffer4;
 volatile char startFlag = 0x7e;
-volatile int counter = 0;
+volatile int counter = 0,counter2=0;
 volatile int prevReading = 0;
 volatile bool foundInterval = false;
 bool firstTime=true;
 bool firstTime2=true;
 volatile bool sampleRate = false;
-volatile char message[1][1000];
+//volatile char message[1][1000];
 int index = 0;
 bool done = false;
 int sizeOfMessage;
 int temp = 0;
 volatile float testTime = 0;
 volatile bool state = false;
+volatile bool readBit=false;
+volatile int bitArray [500];
+volatile int k=0;
 
 void setup() {
   // put your setup code here, to run once:
@@ -62,7 +65,7 @@ void loop() {
     sizeOfMessage = index;
     index = 0;
     for(index; index<=sizeOfMessage; index++){
-      Serial.print(message[1][index]);
+     // Serial.print(message[1][index]);
     }
     firstTime2 = false;
   }
@@ -85,15 +88,83 @@ void pciSetup(byte pin)
 
 // Pin change interrupt
 ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
-{      //Serial.println("In interrupt");
+{      
+    
+  //Serial.println("In interrupt");
        frequency = divider/(micros() - prevInterruptTime);
-
+       prevToneRead=tone1;
        if (frequency > 3500) {
            tone1 = 1;
         }
         else{
           tone1 = 0;
         }
+  if(readBit){
+    counter2++;
+    //Serial.println(counter);
+    
+     if(prevToneRead==tone1){
+        buffer1>>=1;
+        buffer1 |= 0x80;
+        
+        if(k<=500){
+          bitArray[k]=1;
+        }
+        k++;
+        
+        //Serial.print("pushing 1");
+        //Serial.print("buffer1 is ");
+        //for(temp=7; temp>=0; temp--){
+        //  Serial.print(bitRead(buffer1,temp));
+        //}
+        //Serial.println(buffer1);
+        //Serial.println("");
+     }else{
+        buffer1>>=1;
+        buffer1 |= 0x00;
+        if(k<=500){
+          bitArray[k]=0;
+        }
+        
+        k++;
+        //Serial.print("pushing 0");
+        //Serial.print("buffer1 is ");
+      
+        //for(temp=7; temp>=0; temp--){
+         // Serial.print(bitRead(buffer1,temp));
+        //}
+        //Serial.println(buffer1);
+        //Serial.println("");
+     }
+    // prevToneRead = tone1;
+  
+     if(counter2==8){
+      int i=0;
+        if(k==200){
+          Serial.println("");
+          for(i=0;i<100;i++){
+            Serial.print(bitArray[i]);
+          }
+        }
+        //Serial.print("Buffer char is ");
+        Serial.print(buffer1);
+        //message[0][index] = buffer1;
+        index++;
+        counter2=0;
+        if((buffer1^startFlag)==0){
+          Serial.println("found second flag");
+          Timer1.stop();
+          done = true;
+          
+        }
+        buffer1 = 0;
+       // buffer1 |= 0x00;
+        //counter++;
+     }
+     readBit=false;
+  }
+  
+        
        prevInterruptTime=micros();
       // Serial.println(tone1);
 }
@@ -282,6 +353,9 @@ void clearBuffers(){
 void timerRead(){
   digitalWrite(8,sampleRate);
   sampleRate = !sampleRate;
+  readBit=true;
+ /* digitalWrite(8,sampleRate);
+  sampleRate = !sampleRate;
   counter++;
   //Serial.println(counter);
   
@@ -323,7 +397,7 @@ void timerRead(){
         
       }
       buffer1 = 0;
-   }
+   }*/
 }
 
 

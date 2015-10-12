@@ -18,7 +18,7 @@ volatile bool foundInterval = false;
 bool firstTime=true;
 bool firstTime2=true;
 volatile bool sampleRate = false;
-//volatile char message[1][1000];
+//volatile char message[1][200];
 int index = 0;
 bool done = false;
 int sizeOfMessage;
@@ -26,8 +26,12 @@ int temp = 0;
 volatile float testTime = 0;
 volatile bool state = false;
 volatile bool readBit=false;
-volatile int bitArray [500];
+volatile int bitArray [700];
 volatile int k=0;
+volatile int buffer1Array [8];
+volatile int j=0;
+boolean hitEndFlag1 = false;
+boolean hitEndFlag2 = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -99,7 +103,7 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
   
     //Serial.println("In interrupt");
          frequency = divider/(micros() - prevInterruptTime);
-         if (frequency > 3500) {
+         if (frequency > 3600) {
              tone1 = 1;
           }
           else{
@@ -113,10 +117,12 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
           buffer1>>=1;
           buffer1 |= 0x80;
           
-          if(k<=500){
+          if(k<=690){
             bitArray[k]=1;
           }
           k++;
+          buffer1Array[j]=1;
+          j++;
           
           //Serial.print("pushing 1");
           //Serial.print("buffer1 is ");
@@ -129,11 +135,13 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
        else{
           buffer1>>=1;
           buffer1 |= 0x00;
-          if(k<=500){
+          if(k<=690){
             bitArray[k]=0;
           }
           
           k++;
+          buffer1Array[j]=0;
+          j++;
           //Serial.print("pushing 0");
           //Serial.print("buffer1 is ");
         
@@ -149,18 +157,19 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
         int i=0;
 
             for(i=0;i<8;i++){
-             // Serial.print(bitRead(buffer1,i));
-             // bitWrite(buffer1, i, bitArray[i]);
+              bitWrite(buffer1,i,buffer1Array[i]);
+              //Serial.print(bitRead(buffer1,i));
+              
             }
             //Serial.print("-");
 
             
             // = 0;
         
-          if(k==200){
+          if(k==640){
             Serial.println("");
             
-            for(i=0;i<100;i++){
+            for(i=0;i<690;i++){
               if(i%8 == 0){
                 Serial.print("-");
               }
@@ -169,16 +178,17 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
           }
           //Serial.print("Buffer char is ");
           //Serial.print(buffer1);
-          //message[0][index] = buffer1;
+         // message[0][index] = buffer1;
           index++;
           counter2=0;
           if((buffer1^startFlag)==0){
-            Serial.println("found second flag");
-            Timer1.stop();
-            done = true;
+           // Serial.println("found second flag");
+            //Timer1.stop();
+            //done = true;
             
           }
           buffer1 = 0;
+          j=0;
          // buffer1 |= 0x00;
           //counter++;
        }

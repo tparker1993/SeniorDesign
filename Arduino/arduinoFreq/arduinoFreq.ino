@@ -18,7 +18,7 @@ volatile bool foundInterval = false;
 bool firstTime=true;
 bool firstTime2=true;
 volatile bool sampleRate = false;
-//volatile char message[1][200];
+volatile char message[1][200];
 int index = 0;
 bool done = false;
 int sizeOfMessage;
@@ -26,12 +26,13 @@ int temp = 0;
 volatile float testTime = 0;
 volatile bool state = false;
 volatile bool readBit=false;
-volatile int bitArray [700];
+//volatile int bitArray [700];
 volatile int k=0;
 volatile int buffer1Array [8];
 volatile int j=0;
 boolean hitEndFlag1 = false;
 boolean hitEndFlag2 = false;
+int onesInRow =0;
 
 void setup() {
   // put your setup code here, to run once:
@@ -61,7 +62,7 @@ void loop() {
   if(firstTime == true){
 
     Timer1.attachInterrupt(shiftTime);
-    Timer1.setPeriod(230);
+    Timer1.setPeriod(230);//230
     
     buffer1=0;
     counter=0;
@@ -73,7 +74,16 @@ void loop() {
     sizeOfMessage = index;
     index = 0;
     for(index; index<=sizeOfMessage; index++){
-     // Serial.print(message[1][index]);
+      /*Serial.print(bitRead(message[0][index],7));
+      Serial.print(bitRead(message[0][index],6));
+      Serial.print(bitRead(message[0][index],5));
+      Serial.print(bitRead(message[0][index],4));
+      Serial.print(bitRead(message[0][index],3));
+      Serial.print(bitRead(message[0][index],2));
+      Serial.print(bitRead(message[0][index],1));
+      Serial.print(bitRead(message[0][index],0));
+      Serial.print("-");*/
+      Serial.print(message[0][index]);
     }
     firstTime2 = false;
   }
@@ -100,7 +110,7 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
   
   //Serial.println("In interrupt");
        frequency = divider/(micros() - prevInterruptTime);
-       if (frequency > 3800) {
+       if (frequency > 4000) {//3800
            tone1 = 1;
         }
         else{
@@ -324,12 +334,13 @@ void timerRead(){
           buffer1>>=1;
           buffer1 |= 0x80;
           
-          if(k<=690){
-            bitArray[k]=1;
-          }
+          //if(k<=690){
+            //bitArray[k]=1;
+          //}
           k++;
           buffer1Array[j]=1;
           j++;
+          onesInRow++;
           
           //Serial.print("pushing 1");
           //Serial.print("buffer1 is ");
@@ -338,17 +349,37 @@ void timerRead(){
           //}
           //Serial.println(buffer1);
           //Serial.println("");
+
+          if(onesInRow == 6){
+            onesInRow = 0;
+            //flag
+          }
        }
        else{
-          buffer1>>=1;
-          buffer1 |= 0x00;
-          if(k<=690){
-            bitArray[k]=0;
+
+          if(onesInRow == 5){
+            onesInRow = 0;
+            counter2--;
+            //bit stuffing
+
+            
           }
+          else{
+
+            buffer1>>=1;
+            buffer1 |= 0x00;
+            //if(k<=690){
+            //  bitArray[k]=0;
+            //}
+            
+            k++;
+            buffer1Array[j]=0;
+            j++;
+
+            onesInRow = 0;
+          }
+        
           
-          k++;
-          buffer1Array[j]=0;
-          j++;
           //Serial.print("pushing 0");
           //Serial.print("buffer1 is ");
         
@@ -373,19 +404,21 @@ void timerRead(){
             
             // = 0;
         
-          if(k==640){
-            Serial.println("");
+          if(k==1000){
+            //Serial.println("");
             
-            for(i=0;i<690;i++){
-              if(i%8 == 0){
-                Serial.print("-");
-              }
-              Serial.print(bitArray[i]);
-            }
+            //for(i=0;i<690;i++){
+              //if(i%8 == 0){
+                //Serial.print("-");
+              //}
+              //Serial.print(bitArray[i]);
+            //}
+            Timer1.stop();
+            done = true;
           }
           //Serial.print("Buffer char is ");
           //Serial.print(buffer1);
-         // message[0][index] = buffer1;
+          message[0][index] = buffer1;
           index++;
           counter2=0;
           if((buffer1^startFlag)==0){

@@ -18,7 +18,7 @@ volatile bool foundInterval = false;
 bool firstTime=true;
 bool firstTime2=true;
 volatile bool sampleRate = false;
-//volatile char message[1][1000];
+//volatile char message[1][200];
 int index = 0;
 bool done = false;
 int sizeOfMessage;
@@ -26,8 +26,12 @@ int temp = 0;
 volatile float testTime = 0;
 volatile bool state = false;
 volatile bool readBit=false;
-volatile int bitArray [500];
+volatile int bitArray [700];
 volatile int k=0;
+volatile int buffer1Array [8];
+volatile int j=0;
+boolean hitEndFlag1 = false;
+boolean hitEndFlag2 = false;
 
 void setup() {
   // put your setup code here, to run once:
@@ -40,6 +44,7 @@ void setup() {
   Timer1.initialize(sample);
   Timer1.attachInterrupt(timersetup);  // attaches callback() as a timer overflow interrupt
   digitalWrite(7,HIGH);
+  prevInterruptTime=micros();
   
 }
 
@@ -54,6 +59,9 @@ void loop() {
     
   }
   if(firstTime == true){
+
+    Timer1.attachInterrupt(shiftTime);
+    Timer1.setPeriod(230);
     
     buffer1=0;
     counter=0;
@@ -89,84 +97,19 @@ void pciSetup(byte pin)
 // Pin change interrupt
 ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
 {      
-    
+  
   //Serial.println("In interrupt");
        frequency = divider/(micros() - prevInterruptTime);
-       prevToneRead=tone1;
-       if (frequency > 3500) {
+       if (frequency > 3800) {
            tone1 = 1;
         }
         else{
           tone1 = 0;
         }
-  if(readBit){
-    counter2++;
-    //Serial.println(counter);
-    
-     if(prevToneRead==tone1){
-        buffer1>>=1;
-        buffer1 |= 0x80;
-        
-        if(k<=500){
-          bitArray[k]=1;
-        }
-        k++;
-        
-        //Serial.print("pushing 1");
-        //Serial.print("buffer1 is ");
-        //for(temp=7; temp>=0; temp--){
-        //  Serial.print(bitRead(buffer1,temp));
-        //}
-        //Serial.println(buffer1);
-        //Serial.println("");
-     }else{
-        buffer1>>=1;
-        buffer1 |= 0x00;
-        if(k<=500){
-          bitArray[k]=0;
-        }
-        
-        k++;
-        //Serial.print("pushing 0");
-        //Serial.print("buffer1 is ");
       
-        //for(temp=7; temp>=0; temp--){
-         // Serial.print(bitRead(buffer1,temp));
-        //}
-        //Serial.println(buffer1);
-        //Serial.println("");
-     }
-    // prevToneRead = tone1;
+     prevInterruptTime=micros();
+    // Serial.println(tone1);
   
-     if(counter2==8){
-      int i=0;
-        if(k==200){
-          Serial.println("");
-          for(i=0;i<100;i++){
-            Serial.print(bitArray[i]);
-          }
-        }
-        //Serial.print("Buffer char is ");
-        Serial.print(buffer1);
-        //message[0][index] = buffer1;
-        index++;
-        counter2=0;
-        if((buffer1^startFlag)==0){
-          Serial.println("found second flag");
-          Timer1.stop();
-          done = true;
-          
-        }
-        buffer1 = 0;
-       // buffer1 |= 0x00;
-        //counter++;
-     }
-     readBit=false;
-  }
-  
-        
-       prevInterruptTime=micros();
-      // Serial.println(tone1);
 }
 void timersetup(){
     digitalWrite(8,sampleRate);
@@ -183,14 +126,12 @@ void timersetup(){
               //Serial.print(buffer1);
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //float sample=829.80x8;
               //Timer1.detachInterrupt();
               //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
-              Serial.println("start flag Detected 1 ");
-              Serial.println(counter);
+              //Timer1.start();
+              
               
 
             }
@@ -205,12 +146,11 @@ void timersetup(){
               //Serial.println("Start Flag Detected 1*");
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //float sample=829.80x8;
               //Timer1.detachInterrupt();
               //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
+              //Timer1.start();
               
             }
            // Serial.println(buffer1);
@@ -227,13 +167,9 @@ void timersetup(){
               //Serial.print(buffer2);
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //Timer1.detachInterrupt();
               //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
-              Serial.println("Start Flag Detected 2 ");
-              Serial.println(counter);
               
   
             }
@@ -245,12 +181,10 @@ void timersetup(){
               //Serial.println("Start Flag Detected 2*");
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //float sample=829.80x8;
               //Timer1.detachInterrupt();
               //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
             }
             prevTone2=tone1;
          }
@@ -265,14 +199,9 @@ void timersetup(){
               //Serial.print(buffer3);
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //Timer1.detachInterrupt();
-              //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
-              Serial.println("Start Flag Detected 3 ");
-              Serial.println(counter);
-              
+              //Timer1.stop();           
 
             }
             prevTone3=tone1;
@@ -283,12 +212,9 @@ void timersetup(){
               //Serial.println("Start Flag Detected 3*");
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //float sample=829.80x8;
               //Timer1.detachInterrupt();
-              //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
             }
             prevTone3=tone1;
          }
@@ -303,13 +229,9 @@ void timersetup(){
               //Serial.print(buffer4);
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //Timer1.detachInterrupt();
               //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
-              Serial.println("Start Flag Detected 4 ");
-              Serial.println(counter);
               //Serial.print(buffer4);
               //foundInterval=true;
               //prevToneRead=tone1;
@@ -325,12 +247,11 @@ void timersetup(){
               //Serial.println("Start Flag Detected 4*");
               foundInterval=true;
               prevToneRead=tone1;
-              float sample=833.33;
+              sample=833.33;
               //float sample=829.80x8;
               //Timer1.detachInterrupt();
               //Timer1.stop();
-              Timer1.setPeriod(sample);
-              Timer1.attachInterrupt(timerRead);
+              //Timer1.start();
             }
             prevTone4=tone1;
          }
@@ -353,7 +274,7 @@ void clearBuffers(){
 void timerRead(){
   digitalWrite(8,sampleRate);
   sampleRate = !sampleRate;
-  readBit=true;
+  //readBit=true;
  /* digitalWrite(8,sampleRate);
   sampleRate = !sampleRate;
   counter++;
@@ -382,9 +303,7 @@ void timerRead(){
       //Serial.println("");
    }
    prevToneRead = tone1;
-
    if(counter==8){
-
       //Serial.print("Buffer char is ");
       Serial.print(buffer1);
       message[0][index] = buffer1;
@@ -398,7 +317,96 @@ void timerRead(){
       }
       buffer1 = 0;
    }*/
+
+        counter2++;
+      
+       if(prevToneRead==tone1){
+          buffer1>>=1;
+          buffer1 |= 0x80;
+          
+          if(k<=690){
+            bitArray[k]=1;
+          }
+          k++;
+          buffer1Array[j]=1;
+          j++;
+          
+          //Serial.print("pushing 1");
+          //Serial.print("buffer1 is ");
+          //for(temp=7; temp>=0; temp--){
+          //  Serial.print(bitRead(buffer1,temp));
+          //}
+          //Serial.println(buffer1);
+          //Serial.println("");
+       }
+       else{
+          buffer1>>=1;
+          buffer1 |= 0x00;
+          if(k<=690){
+            bitArray[k]=0;
+          }
+          
+          k++;
+          buffer1Array[j]=0;
+          j++;
+          //Serial.print("pushing 0");
+          //Serial.print("buffer1 is ");
+        
+          //for(temp=7; temp>=0; temp--){
+           // Serial.print(bitRead(buffer1,temp));
+          //}
+          //Serial.println(buffer1);
+          //Serial.println("");
+       }
+       prevToneRead = tone1;
+    
+       if(counter2==8){
+        int i=0;
+
+            for(i=0;i<8;i++){
+              bitWrite(buffer1,i,buffer1Array[i]);
+              //Serial.print(bitRead(buffer1,i));
+              
+            }
+            //Serial.print("-");
+
+            
+            // = 0;
+        
+          if(k==640){
+            Serial.println("");
+            
+            for(i=0;i<690;i++){
+              if(i%8 == 0){
+                Serial.print("-");
+              }
+              Serial.print(bitArray[i]);
+            }
+          }
+          //Serial.print("Buffer char is ");
+          //Serial.print(buffer1);
+         // message[0][index] = buffer1;
+          index++;
+          counter2=0;
+          if((buffer1^startFlag)==0){
+           // Serial.println("found second flag");
+            //Timer1.stop();
+            //done = true;
+            
+          }
+          buffer1 = 0;
+          j=0;
+         // buffer1 |= 0x00;
+          //counter++;
+       }
+       //readBit=false;
+       //prevToneRead = tone1;
+
+   
 }
 
-
+void shiftTime(){
+  Timer1.setPeriod(sample);
+  Timer1.attachInterrupt(timerRead);
+}
 

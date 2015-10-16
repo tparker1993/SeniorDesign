@@ -89,22 +89,12 @@ void loop() {
     done = false;
     Serial.print("Started with division");
     Serial.println(division);
-    
-    //Timer1.stop();
+
     sizeOfMessage = index;
     index = 0;
 
     if(!dontPrint){
       for(index; index<=sizeOfMessage; index++){
-      /*Serial.print(bitRead(message[0][index],7));
-      Serial.print(bitRead(message[0][index],6));
-      Serial.print(bitRead(message[0][index],5));
-      Serial.print(bitRead(message[0][index],4));
-      Serial.print(bitRead(message[0][index],3));
-      Serial.print(bitRead(message[0][index],2));
-      Serial.print(bitRead(message[0][index],1));
-      Serial.print(bitRead(message[0][index],0));
-      Serial.print("-");*/
       Serial.print(message[0][index]);
       }
     }
@@ -115,28 +105,8 @@ void loop() {
     findStart = true;
     firstTime = false;
     sampleState = 1;
-    buffer1 = 0;
-    buffer2 = 0;
-    buffer3 = 0;
-    buffer4 = 0;
-    buffer5 = 0;
-    buffer6 = 0;
-    buffer7 = 0;
-    buffer8 = 0;
-    prevTone1 = 0;
-    prevTone2 = 0;
-    prevTone3 = 0;
-    prevTone4 = 0;
-    prevTone5 = 0;
-    prevTone6 = 0;
-    prevTone7 = 0;
-    prevTone8 = 0;
+
   }
-  
-  
-  
-  //Serial.println("a break");
-  
 
 }
 
@@ -152,8 +122,6 @@ void pciSetup(byte pin)
 // Pin change interrupt
 ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
 {      
-  
-  //Serial.println("In interrupt");
        frequency = divider/(micros() - prevInterruptTime);
        if (frequency > 4200) {//3800
            tone1 = 1;
@@ -163,7 +131,6 @@ ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
         }
       
      prevInterruptTime=micros();
-  
 }
 void timersetup(){
   
@@ -359,150 +326,98 @@ void clearBuffers(){
 void timerRead(){
   digitalWrite(8,sampleRate);
   sampleRate = !sampleRate;
-  //readBit=true;
- /* digitalWrite(8,sampleRate);
-  sampleRate = !sampleRate;
-  counter++;
-  //Serial.println(counter);
+  counter2++;
+
+    if(!done){
+     if(prevToneRead==tone1){
+        
+        //if(k<=690){
+          //bitArray[k]=1;
+        //}
+        buffer1Array[j]=1;
+        j++;
+        onesInRow++;
+        
+        //Serial.print("pushing 1");
+        //Serial.print("buffer1 is ");
+        //for(temp=7; temp>=0; temp--){
+        //  Serial.print(bitRead(buffer1,temp));
+        //}
+        //Serial.println(buffer1);
+        //Serial.println("");
   
-   if(prevToneRead==tone1){
-      buffer1>>=1;
-      buffer1 |= 0x80;
-      //Serial.print("pushing 1");
-      //Serial.print("buffer1 is ");
-      //for(temp=7; temp>=0; temp--){
-      //  Serial.print(bitRead(buffer1,temp));
-      //}
-      //Serial.println(buffer1);
-      //Serial.println("");
-   }else{
-      buffer1>>=1;
-      buffer1 |= 0x00;
-      //Serial.print("pushing 0");
-      //Serial.print("buffer1 is ");
-    
-      //for(temp=7; temp>=0; temp--){
-       // Serial.print(bitRead(buffer1,temp));
-      //}
-      //Serial.println(buffer1);
-      //Serial.println("");
-   }
-   prevToneRead = tone1;
-   if(counter==8){
-      //Serial.print("Buffer char is ");
-      Serial.print(buffer1);
-      message[0][index] = buffer1;
-      index++;
-      counter=0;
-      if((buffer1^startFlag)==0){
-        Serial.println("found second flag");
-        Timer1.stop();
-        done = true;
-        
-      }
-      buffer1 = 0;
-   }*/
-
-        counter2++;
-      
-       if(prevToneRead==tone1){
+        if(onesInRow == 6){
+          onesInRow = 0;
+          //flag
+        }
+     }
+     else{
+  
+        if(onesInRow == 5){
+          onesInRow = 0;
+          counter2--;
+          //bit stuffing
+  
           
+        }
+        else{
           //if(k<=690){
-            //bitArray[k]=1;
+          //  bitArray[k]=0;
           //}
-          buffer1Array[j]=1;
+          
+          buffer1Array[j]=0;
           j++;
-          onesInRow++;
-          
-          //Serial.print("pushing 1");
-          //Serial.print("buffer1 is ");
-          //for(temp=7; temp>=0; temp--){
-          //  Serial.print(bitRead(buffer1,temp));
-          //}
-          //Serial.println(buffer1);
-          //Serial.println("");
-
-          if(onesInRow == 6){
-            onesInRow = 0;
-            //flag
+  
+          onesInRow = 0;
+        }
+      
+        
+        //Serial.print("pushing 0");
+        //Serial.print("buffer1 is ");
+      
+        //for(temp=7; temp>=0; temp--){
+         // Serial.print(bitRead(buffer1,temp));
+        //}
+        //Serial.println(buffer1);
+        //Serial.println("");
+     }
+     prevToneRead = tone1;
+  
+     if(counter2==8){
+      int i=0;
+  
+          for(i=0;i<8;i++){
+            bitWrite(buffer1,i,buffer1Array[i]);
           }
-       }
-       else{
-
-          if(onesInRow == 5){
-            onesInRow = 0;
-            counter2--;
-            //bit stuffing
-
-            
+  
+        if(index < 200){
+          message[0][index] = buffer1;
+          index++;
+        }
+        else{
+          Serial.println("Failed to locate end flag");
+          done = true;
+          dontPrint = true;
+          Timer1.attachInterrupt(nothing);
+        }
+        
+        counter2=0;
+        
+        if((buffer1^startFlag)==0){
+          if(endFlagLastByte == true){
           }
           else{
-            //if(k<=690){
-            //  bitArray[k]=0;
-            //}
-            
-            buffer1Array[j]=0;
-            j++;
-
-            onesInRow = 0;
-          }
-        
-          
-          //Serial.print("pushing 0");
-          //Serial.print("buffer1 is ");
-        
-          //for(temp=7; temp>=0; temp--){
-           // Serial.print(bitRead(buffer1,temp));
-          //}
-          //Serial.println(buffer1);
-          //Serial.println("");
-       }
-       prevToneRead = tone1;
-    
-       if(counter2==8){
-        int i=0;
-
-            for(i=0;i<8;i++){
-              bitWrite(buffer1,i,buffer1Array[i]);
-            }
-            //Serial.print("-");
-
-            
-            // = 0;
-        
-          //Serial.print("Buffer char is ");
-          //Serial.print(buffer1);
-          if(index < 200){
-            message[0][index] = buffer1;
-            index++;
-          }
-          else{
-            Serial.println("Failed to locate end flag");
             done = true;
-            dontPrint = true;
+            Timer1.attachInterrupt(nothing);
           }
-          
-          counter2=0;
-          
-          if((buffer1^startFlag)==0){
-            if(endFlagLastByte == true){
-            }
-            else{
-              done = true;
-            }
-          }
-          else{
-            endFlagLastByte = false;
-          }
-          buffer1 = 0;
-          j=0;
-         // buffer1 |= 0x00;
-          //counter++;
-       }
-       //readBit=false;
-       //prevToneRead = tone1;
-
-   
+        }
+        else{
+          endFlagLastByte = false;
+        }
+        buffer1 = 0;
+        j=0;
+     }
+  }
 }
 
 void shiftTime(){

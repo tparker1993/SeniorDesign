@@ -39,6 +39,7 @@ boolean endFlagLastByte = false;
 boolean findStart = true;
 boolean dontPrint = false;
 
+//Rick was here
 
 void setup() {
   // put your setup code here, to run once:

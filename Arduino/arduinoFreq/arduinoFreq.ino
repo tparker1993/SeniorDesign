@@ -38,7 +38,13 @@ int temp2 = 0;
 boolean endFlagLastByte = false;
 boolean findStart = true;
 boolean dontPrint = false;
-
+volatile short crc=0xFFFF;
+volatile const short poly=0x8408;
+volatile int lsb=0;
+volatile short rcrc;
+volatile unsigned char lByte;
+volatile unsigned char hByte;
+volatile int z=0;
 //Rick was here
 
 void setup() {
@@ -68,6 +74,8 @@ void loop() {
     division = 1;
     done = false;
     counter = 0;
+    crc=0xFFFF;
+    //delay(1000);
     Timer1.setPeriod(104.166);
     Timer1.attachInterrupt(timersetup);  // attaches callback() as a timer overflow interrupt
     Serial.println("Find Start");
@@ -88,15 +96,31 @@ void loop() {
   if(done == true){
     Timer1.attachInterrupt(nothing);
     done = false;
-    Serial.print("Started with division");
-    Serial.println(division);
+    //Serial.print("Started with division");
+    //Serial.println(division);
 
     sizeOfMessage = index;
     index = 0;
 
     if(!dontPrint){
-      for(index; index<=sizeOfMessage; index++){
-      Serial.print(message[0][index]);
+      for(index; index<sizeOfMessage; index++){
+        Serial.print(message[0][index]);
+      }
+      lByte=message[0][sizeOfMessage-2];
+      hByte=message[0][sizeOfMessage-3];
+      rcrc=((hByte<<8)|lByte);
+      Serial.println(hByte);
+      Serial.println(lByte);
+      Serial.println(rcrc);
+      Serial.println(crc);
+      
+      if(crc==rcrc)
+      {
+        Serial.print("Correct CRC");
+      }
+      else
+      {
+        Serial.print("Put your hands in the ERRRRRRORRR");
       }
     }
 
@@ -338,7 +362,15 @@ void timerRead(){
         buffer1Array[j]=1;
         j++;
         onesInRow++;
-        
+
+
+        lsb=(crc & 1);
+        crc =(crc>>1);
+        crc &= 0x7FFF;
+        if((lsb^1) == 1)
+        {
+          crc=(crc^poly); 
+        }
         //Serial.print("pushing 1");
         //Serial.print("buffer1 is ");
         //for(temp=7; temp>=0; temp--){
@@ -370,6 +402,14 @@ void timerRead(){
           j++;
   
           onesInRow = 0;
+
+          lsb=(crc & 1);
+          crc=(crc>>1);
+          crc &= 0x7FFF;
+          if((lsb^0) == 1)
+          {
+            crc=(crc^poly); 
+          }
         }
       
         
@@ -409,6 +449,7 @@ void timerRead(){
           }
           else{
             done = true;
+            crc=(~crc);
             Timer1.attachInterrupt(nothing);
           }
         }
@@ -430,4 +471,3 @@ void shiftTime(){
 
 void nothing(){
 }
-

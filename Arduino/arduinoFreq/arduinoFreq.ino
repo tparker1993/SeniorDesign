@@ -44,7 +44,8 @@ volatile int lsb=0;
 volatile short rcrc;
 volatile unsigned char lByte;
 volatile unsigned char hByte;
-volatile int z=0;
+volatile int pushVal=0;
+volatile short curCRC=0;
 //Rick was here
 
 void setup() {
@@ -109,10 +110,13 @@ void loop() {
       lByte=message[0][sizeOfMessage-2];
       hByte=message[0][sizeOfMessage-3];
       rcrc=((hByte<<8)|lByte);
+      Serial.println("Final");
       Serial.println(hByte);
       Serial.println(lByte);
       Serial.println(rcrc);
       Serial.println(crc);
+      Serial.println();
+      Serial.println(curCRC);
       
       if(crc==rcrc)
       {
@@ -363,14 +367,7 @@ void timerRead(){
         j++;
         onesInRow++;
 
-
-        lsb=(crc & 1);
-        crc =(crc>>1);
-        crc &= 0x7FFF;
-        if((lsb^1) == 1)
-        {
-          crc=(crc^poly); 
-        }
+        pushVal=1;
         //Serial.print("pushing 1");
         //Serial.print("buffer1 is ");
         //for(temp=7; temp>=0; temp--){
@@ -403,13 +400,7 @@ void timerRead(){
   
           onesInRow = 0;
 
-          lsb=(crc & 1);
-          crc=(crc>>1);
-          crc &= 0x7FFF;
-          if((lsb^0) == 1)
-          {
-            crc=(crc^poly); 
-          }
+          pushVal=0;
         }
       
         
@@ -455,6 +446,29 @@ void timerRead(){
         }
         else{
           endFlagLastByte = false;
+          for(temp=7; temp>=0; temp--){
+            if(bitRead(buffer1,temp)==1)
+            {
+              lsb=(crc & 1);
+              crc =(crc>>1);
+              crc &= 0x7FFF;
+              if((lsb^1) == 1)
+              {
+                crc=(crc^poly); 
+              }
+            }
+            else
+            {
+              lsb=(crc & 1);
+              crc =(crc>>1);
+              crc &= 0x7FFF;
+              if((lsb^0) == 1)
+              {
+                crc=(crc^poly); 
+              }
+            }
+          }
+          curCRC=crc;
         }
         buffer1 = 0;
         j=0;

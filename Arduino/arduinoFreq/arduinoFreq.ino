@@ -49,6 +49,7 @@ volatile short curCRC=0;
 char bufferDelay1='0';
 char bufferDelay2='0';
 char bufferDelay3='0';
+int counter7=0;
 //Rick was here
 
 void setup() {
@@ -82,7 +83,7 @@ void loop() {
     //delay(1000);
     Timer1.setPeriod(104.166);
     Timer1.attachInterrupt(timersetup);  // attaches callback() as a timer overflow interrupt
-    Serial.println("Find Start");
+    Serial.println("\nWaiting for packet . . .");
 
     
   }
@@ -113,20 +114,52 @@ void loop() {
       for(index; index<sizeOfMessage; index++){
         Serial.print(message[0][index]);
       }
-      lByte=message[0][sizeOfMessage-2];
-      hByte=message[0][sizeOfMessage-3];
+      for(index=0;index<(sizeOfMessage-3);index++)
+      {
+        if(message[0][index]!='~')
+        {
+          counter7++;
+          for(temp=0; temp<8; temp++){
+            if(bitRead(message[0][index],temp)==1)
+            {
+              
+              lsb=(crc & 1);
+              crc =(crc>>1);
+              crc &= 0x7FFF;
+              if((lsb^1) == 1)
+              {
+                crc=(crc^poly); 
+              }
+            }
+            else
+            {
+              lsb=(crc & 1);
+              crc =(crc>>1);
+              crc &= 0x7FFF;
+              if((lsb^0) == 1)
+              {
+                crc=(crc^poly); 
+              }
+            }
+          }
+        }
+      }
+      hByte=message[0][sizeOfMessage-2];
+      lByte=message[0][sizeOfMessage-3];
       rcrc=((hByte<<8)|lByte);
-      Serial.println("Final");
-      Serial.println(hByte);
-      Serial.println(lByte);
-      Serial.println(rcrc);
-      Serial.println(crc);
-      Serial.println();
-      Serial.println(curCRC);
+      //Serial.println("Final");
+      //Serial.println(hByte);
+      //Serial.println(lByte);
+      crc=(~crc);
+      //Serial.println(rcrc);
+      //Serial.println(crc);
+      //Serial.println(counter7);
+      //Serial.println(sizeOfMessage);
+      counter7=0;
       
       if(crc==rcrc)
       {
-        Serial.print("Correct CRC");
+        Serial.print("\nCRC Match");
       }
       else
       {
@@ -457,35 +490,11 @@ void timerRead(){
           }
           else{
             done = true;
-            crc=(~crc);
             Timer1.attachInterrupt(nothing);
           }
         }
         else{
           endFlagLastByte = false;
-          for(temp=7; temp>=0; temp--){
-            if(bitRead(bufferDelay3,temp)==1)
-            {
-              lsb=(crc & 1);
-              crc =(crc>>1);
-              crc &= 0x7FFF;
-              if((lsb^1) == 1)
-              {
-                crc=(crc^poly); 
-              }
-            }
-            else
-            {
-              lsb=(crc & 1);
-              crc =(crc>>1);
-              crc &= 0x7FFF;
-              if((lsb^0) == 1)
-              {
-                crc=(crc^poly); 
-              }
-            }
-          }
-          curCRC=crc;
         }
         buffer1 = 0;
         j=0;

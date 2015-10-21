@@ -58,6 +58,7 @@ void setup() {
   pinMode(7,INPUT);
   pciSetup(7);
   pinMode(8,OUTPUT);
+  pinMode(9,OUTPUT);
   Serial.println("In setup");
 
    Timer1.initialize(104.166);
@@ -79,16 +80,81 @@ void loop() {
     division = 1;
     done = false;
     counter = 0;
+    counter2= 0;
     crc=0xFFFF;
     //delay(1000);
+    dontPrint = false;
+    endFlagLastByte = true;
+    index = 0;
+    firstTime = false;
+    sampleState = 1;
+    buffer1 = 0;
+    buffer2 = 0;
+    buffer3 = 0;
+    buffer4 = 0;
+    buffer5 = 0;
+    buffer6 = 0;
+    buffer7 = 0;
+    buffer8 = 0;
+    prevTone1 = 0;
+    prevTone2 = 0;
+    prevTone3 = 0;
+    prevTone4 = 0;
+    prevTone5 = 0;
+    prevTone6 = 0;
+    prevTone7 = 0;
+    prevTone8 = 0;
+
+    tone1 = 0;
+    freq = 0;
+    frequency =0;
+    prevInterruptTime=0;
+    prevToneRead = 0;
+    sampleState=1;
+    startFlag = 0x7e;
+    counter = 0;
+    counter2=0;
+    prevReading = 0;
+    foundInterval = false;
+    firstTime=false;
+    sampleRate = false; 
+    index = 0;
+    done = false;
+    temp = 0;
+    testTime = 0;
+    state = false;
+    readBit=false;
+    buffer1Array [0] = 0;
+    buffer1Array [1] = 0;
+    buffer1Array [2] = 0;
+    buffer1Array [3] = 0;
+    buffer1Array [4] = 0;
+    buffer1Array [5] = 0;
+    buffer1Array [6] = 0;
+    buffer1Array [7] = 0;
+    j=0;
+    hitEndFlag1 = false;
+    hitEndFlag2 = false;
+    onesInRow =0;
+    temp2 = 0; 
+    endFlagLastByte = false;
+    dontPrint = false;
+    crc=0xFFFF;
+    lsb=0;
+    volatile int pushVal=0;
+    curCRC=0;
+    counter7=0;
+    
     Timer1.setPeriod(104.166);
     Timer1.attachInterrupt(timersetup);  // attaches callback() as a timer overflow interrupt
     Serial.println("\nWaiting for packet . . .");
-
+  
+    digitalWrite(9,0);
     
   }
   
   if(firstTime == true){
+    digitalWrite(9,1);
     endFlagLastByte = true;
     Timer1.attachInterrupt(shiftTime);
     Timer1.setPeriod(380-(micros() - timeDelay));//416.66
@@ -100,15 +166,37 @@ void loop() {
     bufferDelay2='0';
     bufferDelay3='0';
   }
-
   if(done == true){
-    Timer1.attachInterrupt(nothing);
+    //Timer1.attachInterrupt(nothing);
     done = false;
     //Serial.print("Started with division");
     //Serial.println(division);
 
     sizeOfMessage = index;
     index = 0;
+
+    Serial.print(message[0][0]);
+    Serial.print(message[0][1]);
+    Serial.print(message[0][2]);
+    Serial.print(message[0][3]);
+    Serial.print(message[0][4]);
+    Serial.print(message[0][5]);
+    Serial.print(message[0][6]);
+    Serial.print(message[0][7]);
+    Serial.print(message[0][8]);
+    Serial.print(message[0][9]);
+    Serial.print(message[0][10]);
+    Serial.print(message[0][11]);
+    Serial.print(message[0][12]);
+    Serial.print(message[0][13]);
+    Serial.print(message[0][14]);
+    Serial.print(message[0][15]);
+    Serial.print(message[0][16]);
+    Serial.print(message[0][17]);
+    Serial.print(message[0][18]);
+    Serial.print(message[0][19]);
+    Serial.print(message[0][20]);
+    Serial.print(message[0][21]);
 
     if(!dontPrint){
       for(index; index<sizeOfMessage; index++){
@@ -166,7 +254,9 @@ void loop() {
         Serial.print("Put your hands in the ERRRRRRORRR");
       }
     }
-
+    else{
+      Serial.println("Failed to find end flag");
+    }
     dontPrint = false;
     endFlagLastByte = true;
     index = 0;
@@ -471,14 +561,11 @@ void timerRead(){
         if(index < 200){
           message[0][index] = buffer1;
           index++;
-        }
-        else{
-          Serial.println("Failed to locate end flag");
+        }        else{
+          Timer1.attachInterrupt(nothing);
           done = true;
           dontPrint = true;
-          Timer1.attachInterrupt(nothing);
         }
-        
         counter2=0;
         
         if((buffer1^startFlag)==0){
@@ -489,8 +576,8 @@ void timerRead(){
             bufferDelay1 = '0';
           }
           else{
-            done = true;
             Timer1.attachInterrupt(nothing);
+            done = true;
           }
         }
         else{
@@ -510,4 +597,5 @@ void shiftTime(){
 }
 
 void nothing(){
+ buffer1 = 0;
 }

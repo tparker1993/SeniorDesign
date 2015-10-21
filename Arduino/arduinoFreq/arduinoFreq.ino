@@ -46,6 +46,9 @@ volatile unsigned char lByte;
 volatile unsigned char hByte;
 volatile int pushVal=0;
 volatile short curCRC=0;
+char bufferDelay1='0';
+char bufferDelay2='0';
+char bufferDelay3='0';
 //Rick was here
 
 void setup() {
@@ -92,6 +95,9 @@ void loop() {
     buffer1=0;
     counter2=0;
     firstTime=false;
+    bufferDelay1='0';
+    bufferDelay2='0';
+    bufferDelay3='0';
   }
 
   if(done == true){
@@ -417,10 +423,17 @@ void timerRead(){
   
      if(counter2==8){
       int i=0;
-  
+
+      bufferDelay3 = bufferDelay2;
+      bufferDelay2 = bufferDelay1;
+      bufferDelay1 = buffer1;
+
+      
           for(i=0;i<8;i++){
             bitWrite(buffer1,i,buffer1Array[i]);
           }
+
+        
   
         if(index < 200){
           message[0][index] = buffer1;
@@ -437,6 +450,10 @@ void timerRead(){
         
         if((buffer1^startFlag)==0){
           if(endFlagLastByte == true){
+            
+            bufferDelay3 = '0';
+            bufferDelay2 = '0';
+            bufferDelay1 = '0';
           }
           else{
             done = true;
@@ -447,7 +464,7 @@ void timerRead(){
         else{
           endFlagLastByte = false;
           for(temp=7; temp>=0; temp--){
-            if(bitRead(buffer1,temp)==1)
+            if(bitRead(bufferDelay3,temp)==1)
             {
               lsb=(crc & 1);
               crc =(crc>>1);

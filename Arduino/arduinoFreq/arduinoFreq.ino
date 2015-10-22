@@ -175,28 +175,6 @@ void loop() {
     sizeOfMessage = index;
     index = 0;
 
-    Serial.print(message[0][0]);
-    Serial.print(message[0][1]);
-    Serial.print(message[0][2]);
-    Serial.print(message[0][3]);
-    Serial.print(message[0][4]);
-    Serial.print(message[0][5]);
-    Serial.print(message[0][6]);
-    Serial.print(message[0][7]);
-    Serial.print(message[0][8]);
-    Serial.print(message[0][9]);
-    Serial.print(message[0][10]);
-    Serial.print(message[0][11]);
-    Serial.print(message[0][12]);
-    Serial.print(message[0][13]);
-    Serial.print(message[0][14]);
-    Serial.print(message[0][15]);
-    Serial.print(message[0][16]);
-    Serial.print(message[0][17]);
-    Serial.print(message[0][18]);
-    Serial.print(message[0][19]);
-    Serial.print(message[0][20]);
-    Serial.print(message[0][21]);
 
     if(!dontPrint){
       for(index; index<sizeOfMessage; index++){
@@ -260,6 +238,7 @@ void loop() {
     dontPrint = false;
     endFlagLastByte = true;
     index = 0;
+    delay(1000);
     findStart = true;
     firstTime = false;
     sampleState = 1;

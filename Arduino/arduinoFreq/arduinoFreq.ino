@@ -467,7 +467,6 @@ void timerRead(){
 
     if(!done){
      if(prevToneRead==tone1){
-        
         //if(k<=690){
           //bitArray[k]=1;
         //}
@@ -490,7 +489,6 @@ void timerRead(){
         }
      }
      else{
-  
         if(onesInRow == 5){
           onesInRow = 0;
           counter2--;

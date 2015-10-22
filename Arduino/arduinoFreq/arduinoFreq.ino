@@ -50,6 +50,8 @@ char bufferDelay1='0';
 char bufferDelay2='0';
 char bufferDelay3='0';
 int counter7=0;
+int toneRead = 0;
+boolean trigger = false;
 //Rick was here
 
 void setup() {
@@ -104,6 +106,7 @@ void loop() {
     prevTone6 = 0;
     prevTone7 = 0;
     prevTone8 = 0;
+    toneRead = 0;
 
     tone1 = 0;
     freq = 0;
@@ -157,16 +160,93 @@ void loop() {
     digitalWrite(9,1);
     endFlagLastByte = true;
     Timer1.attachInterrupt(shiftTime);
-    Timer1.setPeriod(380-(micros() - timeDelay));//416.66
+    Timer1.setPeriod(360-(micros() - timeDelay));//416.66
     //Timer1.setPeriod(300);
     buffer1=0;
     counter2=0;
-    firstTime=false;
     bufferDelay1='0';
     bufferDelay2='0';
     bufferDelay3='0';
   }
+
+  prevToneRead = 0;
+  trigger = false;
+  endFlagLastByte = true;
+  
+  while(done == false && firstTime == true){
+    
+    if(tone1 == 0){
+      if(prevToneRead == 0){
+        if(trigger == false){
+          //nothing
+        }
+        else{
+          oneStuff();
+        }
+      }
+      else{
+        zeroStuff();
+      }
+    }
+    else{
+      if(prevToneRead == 0){
+        zeroStuff();
+      }
+      else{
+        if(trigger == false){
+          //nothing
+        }
+        else{
+          oneStuff();
+        }
+      }
+    }
+
+    
+    
+
+    if(counter2==8){
+      int i=0;
+      
+      for(i=0;i<8;i++){
+        bitWrite(buffer1,i,buffer1Array[i]);
+      }
+      if(index < 200){
+        message[0][index] = buffer1;
+        //Serial.print(buffer1);
+        index++;
+      }        
+      else{
+        Timer1.attachInterrupt(nothing);
+        done = true;
+        firstTime=false;
+        dontPrint = true;
+        Serial.println("Overflow");
+      }
+      counter2=0;
+      
+      if((buffer1^startFlag)==0){
+        if(endFlagLastByte == true){
+        }
+        else{
+          Timer1.attachInterrupt(nothing);
+          done = true;
+          firstTime=false;
+          Serial.println("End Flag Found");
+        }
+      }
+      else{
+        endFlagLastByte = false;
+      }
+      buffer1 = 0;
+      j=0;
+     }
+  }
+  
   if(done == true){
+
+    
+    
     //Timer1.attachInterrupt(nothing);
     done = false;
     //Serial.print("Started with division");
@@ -174,7 +254,6 @@ void loop() {
 
     sizeOfMessage = index;
     index = 0;
-
 
     if(!dontPrint){
       for(index; index<sizeOfMessage; index++){
@@ -247,6 +326,51 @@ void loop() {
 
 }
 
+void zeroStuff(){
+  Timer1.restart();
+  Timer1.attachInterrupt(timerRead);
+  Timer1.setPeriod(1250);
+  
+  //Serial.print('0');
+  counter2++;
+  if(onesInRow == 5){
+    onesInRow = 0;
+    counter2--;
+  }
+  else{
+    buffer1Array[j]=0;
+    j++;
+    
+    onesInRow = 0;
+    
+    pushVal=0;
+  }
+
+  prevToneRead = prevToneRead ^ 1;
+
+  
+
+  trigger = false;
+}
+
+void oneStuff(){
+  //Serial.print('1');
+  counter2++;
+  buffer1Array[j]=1;
+  j++;
+  onesInRow++;
+  
+  pushVal=1;
+  
+  if(onesInRow == 6){
+    onesInRow = 0;
+  }
+
+  Timer1.setPeriod(833.33);
+
+  trigger = false;
+}
+
 
 // Pin change interrupt setup
 void pciSetup(byte pin)
@@ -260,7 +384,7 @@ void pciSetup(byte pin)
 ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
 {      
        frequency = divider/(micros() - prevInterruptTime);
-       if (frequency > 4200) {//3800
+       if (frequency > 4000) {//4200
            tone1 = 1;
         }
         else{
@@ -461,10 +585,11 @@ void clearBuffers(){
 }
 
 void timerRead(){
+  trigger = true;
   digitalWrite(8,sampleRate);
   sampleRate = !sampleRate;
-  counter2++;
 
+  /*
     if(!done){
      if(prevToneRead==tone1){
         //if(k<=690){
@@ -564,6 +689,7 @@ void timerRead(){
         j=0;
      }
   }
+  */
 }
 
 void shiftTime(){

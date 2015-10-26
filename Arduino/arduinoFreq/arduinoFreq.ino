@@ -1,6 +1,4 @@
 #include "TimerOne.h"
-
-
   //Initialize all variables
 volatile int tone1 = 0;
 int freq = 0;

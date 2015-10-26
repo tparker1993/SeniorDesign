@@ -1,5 +1,7 @@
 #include "TimerOne.h"
 
+
+  //Initialize all variables
 volatile int tone1 = 0;
 int freq = 0;
 volatile long frequency =0;
@@ -52,32 +54,28 @@ char bufferDelay3='0';
 int counter7=0;
 int toneRead = 0;
 boolean trigger = false;
-//Rick was here
 
+  //This method runs when the arduino is turned on. It specifies the pins the way we want for this lab and the baud rate
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
-  pinMode(7,INPUT);
+  Serial.begin(9600);  //sets the baud rate
+  pinMode(7,INPUT);    //This is the input from the comparator
   pciSetup(7);
   pinMode(8,OUTPUT);
   pinMode(9,OUTPUT);
-  Serial.println("In setup");
-
-   Timer1.initialize(104.166);
-   prevInterruptTime=micros();
+  Timer1.initialize(104.166);  //sets the timer to 1/8 the baud rate
+  prevInterruptTime=micros();
   
 }
 
 void loop() {
   // put your main code here, to run repeatedly:
- /* delay(500);
-  for(int i=0;i<7;i++){
-    Serial.println(bitRead(buffer1,i));
-  }*/
-
+//this code runs once the first start flag has been found
   if(findStart == true){
     findStart = false;
     firstTime = false;
+    
+  //reset all variables
     prevToneRead=0;
     division = 1;
     done = false;
@@ -151,17 +149,16 @@ void loop() {
     Timer1.setPeriod(104.166);
     Timer1.attachInterrupt(timersetup);  // attaches callback() as a timer overflow interrupt
     Serial.println("\nWaiting for packet . . .");
-  
-    digitalWrite(9,0);
+    digitalWrite(9,0); //Turns LED on (signifies it is ready to read a packet)
     
   }
-  
+ //This code runs only the first time through the main loop after reading a start flag
   if(firstTime == true){
     digitalWrite(9,1);
     endFlagLastByte = true;
-    Timer1.attachInterrupt(shiftTime);
-    Timer1.setPeriod(360-(micros() - timeDelay));//416.66
-    //Timer1.setPeriod(300);
+    Timer1.attachInterrupt(shiftTime);  //this changes the sampling rate to once per bit period
+    Timer1.setPeriod(360-(micros() - timeDelay));//416.66  //this delays the sampling to be in the middle of the bit period
+//reset the buffers
     buffer1=0;
     counter2=0;
     bufferDelay1='0';
@@ -173,50 +170,51 @@ void loop() {
   trigger = false;
   endFlagLastByte = true;
   
+ //this while loop runs when we are actually reading information
   while(done == false && firstTime == true){
     
+ //this code matches the flow chart provided on ICON for best zero crossing algorithm
     if(tone1 == 0){
       if(prevToneRead == 0){
         if(trigger == false){
           //nothing
         }
         else{
-          oneStuff();
+          oneStuff();  //method call to perform proper operations for reading a one into the buffer
         }
       }
       else{
-        zeroStuff();
+        zeroStuff();  //method call to perform proper operations for reading a zero into the buffer
       }
     }
     else{
       if(prevToneRead == 0){
-        zeroStuff();
+        zeroStuff();  //method call to perform proper operations for reading a zero into the buffer
       }
       else{
         if(trigger == false){
           //nothing
         }
         else{
-          oneStuff();
+          oneStuff();  //method call to perform proper operations for reading a one into the buffer
         }
       }
     }
 
     
     
-
+//this triggers when a byte of data has been read (one full character)
     if(counter2==8){
       int i=0;
       
       for(i=0;i<8;i++){
-        bitWrite(buffer1,i,buffer1Array[i]);
+        bitWrite(buffer1,i,buffer1Array[i]);  //This writes the char into an array
       }
       if(index < 200){
-        message[0][index] = buffer1;
-        //Serial.print(buffer1);
+        message[0][index] = buffer1;  //Put the current character into a 2D array
         index++;
       }        
-      else{
+      else{  //More than the max amount of data characters have passed, so the end flag was missed
         Timer1.attachInterrupt(nothing);
         done = true;
         firstTime=false;
@@ -224,41 +222,39 @@ void loop() {
         Serial.println("Overflow");
       }
       counter2=0;
-      
+
+    //check for a start/end flage
       if((buffer1^startFlag)==0){
-        if(endFlagLastByte == true){
+        if(endFlagLastByte == true){  
         }
         else{
           Timer1.attachInterrupt(nothing);
           done = true;
           firstTime=false;
-          Serial.println("End Flag Found");
+          //Serial.println("End Flag Found");
         }
       }
       else{
-        endFlagLastByte = false;
+        endFlagLastByte = false; 
       }
       buffer1 = 0;
       j=0;
      }
   }
-  
+
+ //we have read a full message or received overflow
   if(done == true){
-
-    
-    
-    //Timer1.attachInterrupt(nothing);
     done = false;
-    //Serial.print("Started with division");
-    //Serial.println(division);
-
     sizeOfMessage = index;
     index = 0;
 
     if(!dontPrint){
       for(index; index<sizeOfMessage; index++){
-        Serial.print(message[0][index]);
+        Serial.print(message[0][index]);    //print out the whole message including the address and FCS
       }
+
+
+    //This for loop performs the logic of calculating the checksum
       for(index=0;index<(sizeOfMessage-3);index++)
       {
         if(message[0][index]!='~')
@@ -267,41 +263,35 @@ void loop() {
           for(temp=0; temp<8; temp++){
             if(bitRead(message[0][index],temp)==1)
             {
-              
-              lsb=(crc & 1);
-              crc =(crc>>1);
-              crc &= 0x7FFF;
+            //perform the logic of pushing a one to the buffer
+              lsb=(crc & 1);  //get the least sig bit
+              crc =(crc>>1);  //shift it to the right one
+              crc &= 0x7FFF; 
               if((lsb^1) == 1)
               {
-                crc=(crc^poly); 
+                crc=(crc^poly);   //exclusive OR the current CRC with the POLY provided
               }
             }
-            else
+            else  //perform the logic of pushing a one to the buffer
             {
-              lsb=(crc & 1);
-              crc =(crc>>1);
+              lsb=(crc & 1); //get the least sig bit
+              crc =(crc>>1);  //shift it right one
               crc &= 0x7FFF;
               if((lsb^0) == 1)
               {
-                crc=(crc^poly); 
+                crc=(crc^poly);  //exclusive OR the current CRC with the POLY provided
               }
             }
           }
         }
       }
-      hByte=message[0][sizeOfMessage-2];
-      lByte=message[0][sizeOfMessage-3];
-      rcrc=((hByte<<8)|lByte);
-      //Serial.println("Final");
-      //Serial.println(hByte);
-      //Serial.println(lByte);
-      crc=(~crc);
-      //Serial.println(rcrc);
-      //Serial.println(crc);
-      //Serial.println(counter7);
-      //Serial.println(sizeOfMessage);
+      hByte=message[0][sizeOfMessage-2];   //get the high byte of the FCS read in from the message
+      lByte=message[0][sizeOfMessage-3];   //get the low byte of the FCS read in from the message
+      rcrc=((hByte<<8)|lByte);             //combine the low and high byte
+      crc=(~crc);                          //negate the check sum
       counter7=0;
-      
+
+    //determine if the checksums match
       if(crc==rcrc)
       {
         Serial.print("\nCRC Match");
@@ -326,13 +316,15 @@ void loop() {
 
 }
 
+//This method performs the operations provided in the flow chart on ICON for the process of adding a zero to the buffer
 void zeroStuff(){
   Timer1.restart();
-  Timer1.attachInterrupt(timerRead);
-  Timer1.setPeriod(1250);
+  Timer1.attachInterrupt(timerRead);  //reattach the interrupt after restarting it
+  Timer1.setPeriod(1250);  //set the sampling rate to 1.5 bit periods 
   
-  //Serial.print('0');
   counter2++;
+  
+ //account for bit stuffing
   if(onesInRow == 5){
     onesInRow = 0;
     counter2--;
@@ -340,37 +332,29 @@ void zeroStuff(){
   else{
     buffer1Array[j]=0;
     j++;
-    
-    onesInRow = 0;
-    
+    onesInRow = 0;   
     pushVal=0;
   }
-
   prevToneRead = prevToneRead ^ 1;
-
-  
-
   trigger = false;
 }
 
+//This method performs the operations provided in the flow chart on ICON for the process of adding a one to the buffer
 void oneStuff(){
-  //Serial.print('1');
   counter2++;
   buffer1Array[j]=1;
   j++;
   onesInRow++;
-  
   pushVal=1;
-  
+
+//reset this value because six ones were sent in a row, bit stuffing has happened  
   if(onesInRow == 6){
     onesInRow = 0;
   }
 
-  Timer1.setPeriod(833.33);
-
+  Timer1.setPeriod(833.33);  //set the sampling rate to 1 bit period
   trigger = false;
 }
-
 
 // Pin change interrupt setup
 void pciSetup(byte pin)
@@ -383,32 +367,34 @@ void pciSetup(byte pin)
 // Pin change interrupt
 ISR (PCINT2_vect) // handle pin change interrupt for D0 to D7 here
 {      
-       frequency = divider/(micros() - prevInterruptTime);
-       if (frequency > 4000) {//4200
+       frequency = divider/(micros() - prevInterruptTime);  //calculate the current frequency
+       if (frequency > 4000) {//4200  //if the frequency represents a high tone set tone1 to one, else set it to zero
            tone1 = 1;
         }
         else{
           tone1 = 0;
         }
       
-     prevInterruptTime=micros();
+     prevInterruptTime=micros();   //keep track of this tone
 }
+
+//this interrupt uses 8 buffers to read in a start flag
 void timersetup(){
   
     digitalWrite(8,sampleRate);
     sampleRate = !sampleRate;
     switch(sampleState){
       case 1:
-         if(prevTone1==tone1){
-            buffer1<<=1;
-            buffer1 |= 1;
-            if((buffer1^startFlag)==0){
+         if(prevTone1==tone1){   //this implements the change on zero algorithm
+            buffer1<<=1;         //shift the buffer by one
+            buffer1 |= 1;        //add one to the buffer
+            if((buffer1^startFlag)==0){  //check for start flag
               prevToneRead=tone1;
               firstTime = true;
               division = 1;
             }
             prevTone1=tone1;
-         }else{
+         }else{   //perform the logic of a change (adding a zero to the buffer)
             buffer1<<=1;
             buffer1 |= 0;
            if((buffer1^startFlag)==0){
@@ -572,7 +558,7 @@ void timersetup(){
     
     sampleState++;
     if(sampleState==9){
-      sampleState=1;
+      sampleState=1;   //reset which buffer to place the next value in
     }
     
 }
@@ -584,114 +570,14 @@ void clearBuffers(){
   buffer4=0;
 }
 
+//this interrupt is active once a start flag is read and it is reading in actual information
 void timerRead(){
-  trigger = true;
+  trigger = true;   //flag to show we have entered this interrupt
   digitalWrite(8,sampleRate);
   sampleRate = !sampleRate;
-
-  /*
-    if(!done){
-     if(prevToneRead==tone1){
-        //if(k<=690){
-          //bitArray[k]=1;
-        //}
-        buffer1Array[j]=1;
-        j++;
-        onesInRow++;
-
-        pushVal=1;
-        //Serial.print("pushing 1");
-        //Serial.print("buffer1 is ");
-        //for(temp=7; temp>=0; temp--){
-        //  Serial.print(bitRead(buffer1,temp));
-        //}
-        //Serial.println(buffer1);
-        //Serial.println("");
-  
-        if(onesInRow == 6){
-          onesInRow = 0;
-          //flag
-        }
-     }
-     else{
-        if(onesInRow == 5){
-          onesInRow = 0;
-          counter2--;
-          //bit stuffing
-  
-          
-        }
-        else{
-          //if(k<=690){
-          //  bitArray[k]=0;
-          //}
-          
-          buffer1Array[j]=0;
-          j++;
-  
-          onesInRow = 0;
-
-          pushVal=0;
-        }
-      
-        
-        //Serial.print("pushing 0");
-        //Serial.print("buffer1 is ");
-      
-        //for(temp=7; temp>=0; temp--){
-         // Serial.print(bitRead(buffer1,temp));
-        //}
-        //Serial.println(buffer1);
-        //Serial.println("");
-     }
-     prevToneRead = tone1;
-  
-     if(counter2==8){
-      int i=0;
-
-      bufferDelay3 = bufferDelay2;
-      bufferDelay2 = bufferDelay1;
-      bufferDelay1 = buffer1;
-
-      
-          for(i=0;i<8;i++){
-            bitWrite(buffer1,i,buffer1Array[i]);
-          }
-
-        
-  
-        if(index < 200){
-          message[0][index] = buffer1;
-          index++;
-        }        else{
-          Timer1.attachInterrupt(nothing);
-          done = true;
-          dontPrint = true;
-        }
-        counter2=0;
-        
-        if((buffer1^startFlag)==0){
-          if(endFlagLastByte == true){
-            
-            bufferDelay3 = '0';
-            bufferDelay2 = '0';
-            bufferDelay1 = '0';
-          }
-          else{
-            Timer1.attachInterrupt(nothing);
-            done = true;
-          }
-        }
-        else{
-          endFlagLastByte = false;
-        }
-        buffer1 = 0;
-        j=0;
-     }
-  }
-  */
 }
 
+//changes the sample rate to once per bit period
 void shiftTime(){
   digitalWrite(8,sampleRate);
   sampleRate = !sampleRate;
